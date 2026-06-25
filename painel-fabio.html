@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Fabio Varandas</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #F0F2F5; min-height: 100vh; }
+
+/* NAV */
+#nav { background: #0D1117; display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 100; }
+#nav-logo { font-size: 15px; font-weight: 800; color: #fff; padding: 14px 0; margin-right: 24px; letter-spacing: -.3px; }
+.nav-btn { background: none; border: none; border-bottom: 3px solid transparent; color: #718096; cursor: pointer; font-size: 13px; font-weight: 700; padding: 14px 16px; font-family: inherit; transition: .15s; }
+.nav-btn.active { color: #fff; border-bottom-color: #38A169; }
+#nav-refresh { margin-left: auto; background: #2D3748; color: #A0AEC0; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+#nav-refresh:hover { background: #4A5568; color: #fff; }
+#last-update { font-size: 10px; color: #4A5568; margin-left: 10px; }
+
+/* PAGES */
+.page { display: none; max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+.page.active { display: block; }
+
+/* HEADER CARDS (stats) */
+.stats-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.stat-card { flex: 1; min-width: 100px; background: #fff; border-radius: 10px; border: 1.5px solid #EDF2F7; padding: 14px 16px; }
+.stat-card .val { font-size: 22px; font-weight: 800; color: #0D1117; }
+.stat-card .lbl { font-size: 11px; color: #A0AEC0; font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* SECTION TITLE */
+.sec-title { font-size: 11px; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+/* FILTER BAR */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar input { flex: 1; min-width: 160px; border: 1.5px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; font-size: 13px; outline: none; font-family: inherit; background: #fff; }
+.filter-bar select { border: 1.5px solid #E2E8F0; border-radius: 8px; padding: 7px 10px; font-size: 12px; outline: none; font-family: inherit; background: #fff; cursor: pointer; color: #4A5568; font-weight: 600; }
+
+/* TASK CARD */
+.task-card { background: #fff; border: 1.5px solid #EDF2F7; border-radius: 10px; padding: 13px 16px; margin-bottom: 8px; }
+.task-card.urgente { border-left: 4px solid #E53E3E; }
+.task-card.normal { border-left: 4px solid #DD6B20; }
+.task-card.baixa { border-left: 4px solid #38A169; }
+.task-card.concluida { opacity: .55; background: #F7FAFC; }
+.task-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.task-title { font-size: 13px; font-weight: 700; color: #0D1117; margin-bottom: 4px; }
+.task-title.done { text-decoration: line-through; color: #A0AEC0; }
+.task-desc { font-size: 12px; color: #718096; margin-bottom: 6px; }
+.task-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* OPP CARD */
+.opp-card { background: #fff; border: 1.5px solid #EDF2F7; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; }
+.opp-card.ganho { border-left: 4px solid #38A169; }
+.opp-card.perdido { border-left: 4px solid #E53E3E; opacity: .6; }
+.opp-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.opp-title { font-size: 14px; font-weight: 700; color: #0D1117; margin-bottom: 3px; }
+.opp-company { font-size: 12px; color: #4A5568; font-weight: 600; margin-bottom: 6px; }
+.opp-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.opp-value { font-size: 13px; font-weight: 800; color: #276749; }
+.opp-obs { font-size: 12px; color: #718096; margin-top: 6px; padding-top: 6px; border-top: 1px solid #F0F2F5; line-height: 1.4; }
+
+/* PIPELINE BAR */
+#pipeline-bar { background: #fff; border: 1.5px solid #EDF2F7; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.pipe-stages { display: flex; overflow-x: auto; gap: 0; }
+.pipe-stage { flex: 1; min-width: 90px; text-align: center; padding: 8px 6px; position: relative; }
+.pipe-stage:not(:last-child)::after { content: '▶'; position: absolute; right: -7px; top: 50%; transform: translateY(-50%); font-size: 10px; color: #CBD5E0; }
+.pipe-name { font-size: 9px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
+.pipe-val { font-size: 13px; font-weight: 800; }
+.pipe-count { font-size: 10px; color: #A0AEC0; }
+
+/* TAGS */
+.tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+.tag-proj { background: #F7F8FA; color: #4A5568; }
+.tag-uf { background: #EBF8FF; color: #2B6CB0; }
+.tag-par { background: #F0FFF4; color: #276749; }
+.tag-prob { background: #FFFFF0; color: #744210; }
+.tag-time { background: #F7F8FA; color: #718096; }
+.stage-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 20px; }
+
+/* BRIEFING */
+.news-item { border-left: 3px solid #E2E8F0; padding: 8px 12px; margin-bottom: 10px; }
+.news-item.tax { border-color: #BEE3F8; background: #EBF8FF; border-radius: 0 6px 6px 0; }
+.news-title-h { font-size: 13px; font-weight: 700; color: #0D1117; margin-bottom: 2px; }
+.news-item.tax .news-title-h { color: #2B6CB0; }
+.news-sum { font-size: 12px; color: #718096; line-height: 1.5; }
+.news-impact { font-size: 11px; color: #2C5282; margin-top: 4px; font-weight: 600; }
+
+/* LOADING */
+#loading-overlay { position: fixed; inset: 0; background: #0D1117; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
+#loading-overlay .spin { font-size: 36px; animation: spin 1s linear infinite; }
+#loading-overlay p { color: #718096; font-size: 14px; margin-top: 16px; font-weight: 600; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: #0D1117; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 9999; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spin">⟳</div>
+  <p>Carregando dados...</p>
+</div>
+
+<div id="toast"></div>
+
+<!-- NAV -->
+<div id="nav">
+  <div id="nav-logo">⚡ Fabio Varandas</div>
+  <button class="nav-btn active" onclick="showPage('tarefas')">📋 Tarefas</button>
+  <button class="nav-btn" onclick="showPage('oportunidades')">💼 Oportunidades</button>
+  <button class="nav-btn" onclick="showPage('briefing')">📰 Briefing</button>
+  <button id="nav-refresh" onclick="reloadAll()">↻ Atualizar dados</button>
+  <span id="last-update"></span>
+</div>
+
+<!-- PAGE TAREFAS -->
+<div id="page-tarefas" class="page active">
+  <div class="stats-row" id="stats-tarefas"></div>
+  <div class="filter-bar">
+    <input id="t-search" placeholder="Buscar tarefa..." oninput="renderTarefas()">
+    <select id="t-proj" onchange="renderTarefas()"><option value="">Todos os projetos</option></select>
+    <select id="t-prio" onchange="renderTarefas()">
+      <option value="">Todas as prioridades</option>
+      <option value="urgente">Urgente</option>
+      <option value="normal">Normal</option>
+      <option value="baixa">Baixa</option>
+    </select>
+    <select id="t-status" onchange="renderTarefas()">
+      <option value="">Todos os status</option>
+      <option value="pendente">Pendente</option>
+      <option value="em andamento">Em andamento</option>
+      <option value="concluída">Concluída</option>
+    </select>
+  </div>
+  <div id="list-tarefas"></div>
+</div>
+
+<!-- PAGE OPORTUNIDADES -->
+<div id="page-oportunidades" class="page">
+  <div class="stats-row" id="stats-opps"></div>
+  <div id="pipeline-bar"><div class="pipe-stages" id="pipe-stages"></div></div>
+  <div class="filter-bar">
+    <input id="o-search" placeholder="Buscar oportunidade, empresa..." oninput="renderOpps()">
+    <select id="o-etapa" onchange="renderOpps()"><option value="">Todas as etapas</option></select>
+    <select id="o-proj" onchange="renderOpps()"><option value="">Todos os projetos</option></select>
+    <select id="o-uf" onchange="renderOpps()"><option value="">Todas as UFs</option></select>
+    <select id="o-par" onchange="renderOpps()"><option value="">Todos os parceiros</option></select>
+  </div>
+  <div id="list-opps"></div>
+</div>
+
+<!-- PAGE BRIEFING -->
+<div id="page-briefing" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:#0D1117">📰 Briefing do dia</div>
+      <div style="font-size:12px;color:#718096;margin-top:3px" id="briefing-date"></div>
+    </div>
+    <button onclick="fetchBriefing(true)" style="background:#2B6CB0;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">↻ Buscar notícias</button>
+  </div>
+  <div id="briefing-content">
+    <div style="text-align:center;padding:48px;color:#A0AEC0">
+      <div style="font-size:32px;margin-bottom:12px">📰</div>
+      <p style="font-size:14px;font-weight:600;margin-bottom:16px">Clique em "Buscar notícias" para carregar o briefing de hoje</p>
+      <button onclick="fetchBriefing(true)" style="background:#0D1117;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Carregar briefing</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CSV_TAREFAS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSZxIvh-5fWZF-2Sk2gJeLa3EIOOoyeOalX6BQiCOY3p__UA4On8_Vfp2lSIer7Wj43EMmGuICxA6AW/pub?output=csv';
+const CSV_OPPS    = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSnFU_CBEu66BkIbKHEceKZow4yFsje-vWAvsEB08wLv0_ImURC3lZBCXiEbWXaSJvRzcH3BYNW4nxA/pub?output=csv';
+const BRIEFING_KEY = 'fabio-briefing-v2';
+
+const STAGES = ['Prospecção','Proposta enviada','Em negociação','Aguardando assinatura','Fechado (ganho)','Perdido'];
+const SC = {
+  'Prospecção':            {color:'#3182CE',bg:'#EBF8FF'},
+  'Proposta enviada':      {color:'#C05621',bg:'#FFFAF0'},
+  'Em negociação':         {color:'#6B46C1',bg:'#FAF5FF'},
+  'Aguardando assinatura': {color:'#B7791F',bg:'#FFFFF0'},
+  'Fechado (ganho)':       {color:'#276749',bg:'#F0FFF4'},
+  'Perdido':               {color:'#9B2C2C',bg:'#FFF5F5'},
+};
+
+let tarefas = [], opps = [];
+let currentPage = 'tarefas';
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtM(v) {
+  const n=Number(v)||0; if(!n) return '';
+  if(n>=1000000000) return 'R$ '+(n/1000000000).toFixed(1).replace('.',',')+'B';
+  if(n>=1000000) return 'R$ '+(n/1000000).toFixed(1).replace('.',',')+'M';
+  if(n>=1000) return 'R$ '+(n/1000).toFixed(0)+'k';
+  return 'R$ '+n.toLocaleString('pt-BR');
+}
+function fmtDate(d) { return d?d.split('-').reverse().join('/'):''; }
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function showToast(m) { const t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
+
+// ── CSV PARSER ────────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = []; let cur='', inQ=false;
+    for(const ch of line) {
+      if(ch==='"') { inQ=!inQ; }
+      else if(ch===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,''));
+    return obj;
+  });
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadCSV(url) {
+  const res = await fetch(url+'&t='+Date.now());
+  return parseCSV(await res.text());
+}
+
+async function reloadAll() {
+  document.getElementById('nav-refresh').textContent='⟳ Atualizando...';
+  try {
+    [tarefas, opps] = await Promise.all([loadCSV(CSV_TAREFAS), loadCSV(CSV_OPPS)]);
+    buildFilters();
+    renderTarefas();
+    renderOpps();
+    const now = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('last-update').textContent = 'Atualizado às '+now;
+    showToast('Dados atualizados ✓');
+  } catch(e) {
+    showToast('Erro ao carregar dados — verifique a conexão');
+  }
+  document.getElementById('nav-refresh').textContent='↻ Atualizar dados';
+  document.getElementById('loading-overlay').style.display='none';
+}
+
+// ── BUILD FILTERS ─────────────────────────────────────────────────────────────
+function buildFilters() {
+  // Tarefas projetos
+  const tProjs = [...new Set(tarefas.map(t=>t.projeto).filter(Boolean))].sort();
+  const tProjSel = document.getElementById('t-proj');
+  const tProjCur = tProjSel.value;
+  tProjSel.innerHTML = '<option value="">Todos os projetos</option>';
+  tProjs.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; tProjSel.appendChild(o); });
+  tProjSel.value = tProjCur;
+
+  // Opps etapa
+  const etapaSel = document.getElementById('o-etapa');
+  const etapaCur = etapaSel.value;
+  etapaSel.innerHTML = '<option value="">Todas as etapas</option>';
+  STAGES.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; etapaSel.appendChild(o); });
+  etapaSel.value = etapaCur;
+
+  // Opps projetos
+  const oProjSel = document.getElementById('o-proj');
+  const oProjCur = oProjSel.value;
+  const oProjs = [...new Set(opps.map(o=>o.projeto).filter(Boolean))].sort();
+  oProjSel.innerHTML = '<option value="">Todos os projetos</option>';
+  oProjs.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; oProjSel.appendChild(o); });
+  oProjSel.value = oProjCur;
+
+  // UF
+  const ufSel = document.getElementById('o-uf');
+  const ufCur = ufSel.value;
+  const ufs = [...new Set(opps.map(o=>o.uf).filter(Boolean))].sort();
+  ufSel.innerHTML = '<option value="">Todas as UFs</option>';
+  ufs.forEach(u=>{ const o=document.createElement('option'); o.value=u; o.textContent=u; ufSel.appendChild(o); });
+  ufSel.value = ufCur;
+
+  // Parceiro
+  const parSel = document.getElementById('o-par');
+  const parCur = parSel.value;
+  const pars = [...new Set(opps.flatMap(o=>(o.parceiro||'').split('/').map(x=>x.trim())).filter(Boolean))].sort();
+  parSel.innerHTML = '<option value="">Todos os parceiros</option>';
+  pars.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; parSel.appendChild(o); });
+  parSel.value = parCur;
+}
+
+// ── RENDER TAREFAS ─────────────────────────────────────────────────────────────
+function renderTarefas() {
+  const q=(document.getElementById('t-search').value||'').toLowerCase();
+  const proj=document.getElementById('t-proj').value;
+  const prio=document.getElementById('t-prio').value;
+  const status=document.getElementById('t-status').value;
+  const today=todayStr();
+
+  let list=tarefas.filter(t=>{
+    if(proj && t.projeto!==proj) return false;
+    if(prio && t.prioridade!==prio) return false;
+    if(status && t.status!==status) return false;
+    if(q && ![(t.titulo||''),(t.descricao||'')].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>{
+    const p={urgente:0,normal:1,baixa:2};
+    return (p[a.prioridade]||1)-(p[b.prioridade]||1)||(a.data||'').localeCompare(b.data||'')||(a.horario||'').localeCompare(b.horario||'');
+  });
+
+  // Stats
+  const total=tarefas.length, pend=tarefas.filter(t=>t.status==='pendente').length;
+  const hoje=tarefas.filter(t=>t.data===today&&t.status!=='concluída').length;
+  const conc=tarefas.filter(t=>t.status==='concluída').length;
+  document.getElementById('stats-tarefas').innerHTML=`
+    <div class="stat-card"><div class="val">${hoje}</div><div class="lbl">📅 Hoje</div></div>
+    <div class="stat-card"><div class="val">${pend}</div><div class="lbl">⏳ Pendentes</div></div>
+    <div class="stat-card"><div class="val">${total}</div><div class="lbl">📋 Total</div></div>
+    <div class="stat-card"><div class="val">${conc}</div><div class="lbl">✅ Concluídas</div></div>`;
+
+  if(!list.length){ document.getElementById('list-tarefas').innerHTML=`<div style="text-align:center;padding:40px;color:#A0AEC0;font-size:14px;font-weight:600">Nenhuma tarefa encontrada</div>`; return; }
+
+  const PC={urgente:{c:'#C53030',bg:'#FFF5F5'},normal:{c:'#C05621',bg:'#FFFAF0'},baixa:{c:'#276749',bg:'#F0FFF4'}};
+  const SI={pendente:'○','em andamento':'◑',concluída:'●'};
+  const SC2={pendente:'#A0AEC0','em andamento':'#3182CE',concluída:'#38A169'};
+
+  document.getElementById('list-tarefas').innerHTML = list.map(t=>{
+    const p=PC[t.prioridade]||PC.normal;
+    const isDone=t.status==='concluída';
+    const isPast=t.data<today && !isDone;
+    const isToday=t.data===today;
+    return `<div class="task-card ${t.prioridade||''} ${isDone?'concluida':''}">
+      <div class="task-top">
+        <div style="flex:1;min-width:0">
+          <div class="task-title${isDone?' done':''}">${esc(t.titulo)}</div>
+          ${t.descricao?`<div class="task-desc">${esc(t.descricao)}</div>`:''}
+          <div class="task-meta">
+            <span class="tag" style="color:${p.c};background:${p.bg}">${(t.prioridade||'').toUpperCase()}</span>
+            ${t.projeto?`<span class="tag tag-proj">${esc(t.projeto)}</span>`:''}
+            ${t.data?`<span class="tag tag-time" style="color:${isPast?'#E53E3E':isToday?'#2B6CB0':'#718096'};font-weight:${isPast||isToday?700:600}">📅 ${isPast?'Atrasada — ':isToday?'Hoje — ':''}${fmtDate(t.data)}${t.horario?' · '+t.horario:''}</span>`:''}
+            <span style="font-size:13px;color:${SC2[t.status]||'#718096'}">${SI[t.status]||'○'} ${esc(t.status)}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER OPPS ───────────────────────────────────────────────────────────────
+function renderOpps() {
+  const q=(document.getElementById('o-search').value||'').toLowerCase();
+  const etapa=document.getElementById('o-etapa').value;
+  const proj=document.getElementById('o-proj').value;
+  const uf=document.getElementById('o-uf').value;
+  const par=document.getElementById('o-par').value;
+
+  let list=opps.filter(o=>{
+    if(etapa && o.etapa!==etapa) return false;
+    if(proj && o.projeto!==proj) return false;
+    if(uf && o.uf!==uf) return false;
+    if(par && !(o.parceiro||'').split('/').map(x=>x.trim()).includes(par)) return false;
+    if(q && ![(o.titulo||''),(o.empresa||''),(o.parceiro||''),(o.observacoes||'')].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>STAGES.indexOf(a.etapa)-STAGES.indexOf(b.etapa)||(Number(b.valor)||0)-(Number(a.valor)||0));
+
+  // Stats
+  const active=opps.filter(o=>o.etapa!=='Perdido'&&o.etapa!=='Fechado (ganho)');
+  const ganhos=opps.filter(o=>o.etapa==='Fechado (ganho)');
+  const pipeline=active.reduce((s,o)=>s+((Number(o.valor)||0)*(Number(o.probabilidade)||50)/100),0);
+  const receita=ganhos.reduce((s,o)=>s+(Number(o.valor)||0),0);
+  document.getElementById('stats-opps').innerHTML=`
+    <div class="stat-card"><div class="val">${opps.length}</div><div class="lbl">💼 Total</div></div>
+    <div class="stat-card"><div class="val" style="color:#B7791F">${fmtM(pipeline)||'—'}</div><div class="lbl">📊 Pipeline</div></div>
+    <div class="stat-card"><div class="val" style="color:#276749">${ganhos.length}</div><div class="lbl">✅ Ganhos</div></div>
+    <div class="stat-card"><div class="val" style="color:#276749">${fmtM(receita)||'—'}</div><div class="lbl">💰 Receita</div></div>
+    <div class="stat-card"><div class="val" style="color:#9B2C2C">${opps.filter(o=>o.etapa==='Perdido').length}</div><div class="lbl">❌ Perdidos</div></div>`;
+
+  // Pipeline bar
+  const activeStages=STAGES.filter(s=>s!=='Perdido'&&s!=='Fechado (ganho)');
+  document.getElementById('pipe-stages').innerHTML=activeStages.map(s=>{
+    const sc2=SC[s]; const items=opps.filter(o=>o.etapa===s);
+    const val=items.reduce((sum,o)=>sum+(Number(o.valor)||0),0);
+    return `<div class="pipe-stage">
+      <div class="pipe-name" style="color:${sc2.color}">${s}</div>
+      <div class="pipe-val" style="color:${sc2.color}">${fmtM(val)||'—'}</div>
+      <div class="pipe-count">${items.length} op.</div>
+    </div>`;
+  }).join('');
+
+  if(!list.length){ document.getElementById('list-opps').innerHTML=`<div style="text-align:center;padding:40px;color:#A0AEC0;font-size:14px;font-weight:600">Nenhuma oportunidade encontrada</div>`; return; }
+
+  document.getElementById('list-opps').innerHTML=list.map(o=>{
+    const sc2=SC[o.etapa]||{color:'#718096',bg:'#F7F8FA'};
+    const isGanho=o.etapa==='Fechado (ganho)', isPerdido=o.etapa==='Perdido';
+    return `<div class="opp-card ${isGanho?'ganho':isPerdido?'perdido':''}">
+      <div class="opp-top">
+        <div style="flex:1;min-width:0">
+          <div class="opp-title">${esc(o.titulo)}</div>
+          ${o.empresa?`<div class="opp-company">🏢 ${esc(o.empresa)}</div>`:''}
+          <div class="opp-meta">
+            <span class="stage-badge" style="color:${sc2.color};background:${sc2.bg}">${esc(o.etapa)}</span>
+            ${o.valor?`<span class="opp-value">${fmtM(o.valor)}</span>`:''}
+            ${o.probabilidade?`<span class="tag tag-prob">🎯 ${o.probabilidade}%</span>`:''}
+            ${o.uf?`<span class="tag tag-uf">📍 ${esc(o.uf)}</span>`:''}
+            ${o.parceiro?`<span class="tag tag-par">🤝 ${esc(o.parceiro)}</span>`:''}
+            ${o.projeto?`<span class="tag tag-proj">${esc(o.projeto)}</span>`:''}
+          </div>
+          ${o.observacoes?`<div class="opp-obs">💬 ${esc(o.observacoes)}</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── BRIEFING ──────────────────────────────────────────────────────────────────
+async function fetchBriefing(force=false) {
+  document.getElementById('briefing-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(!force){
+    try{ const c=JSON.parse(localStorage.getItem(BRIEFING_KEY)||'null'); if(c&&c.date===todayStr()){renderBriefing(c);return;} }catch{}
+  }
+  document.getElementById('briefing-content').innerHTML=`<div style="text-align:center;padding:40px;color:#A0AEC0"><div style="font-size:28px;margin-bottom:10px">⟳</div><p style="font-size:13px">Buscando notícias e atualizações tributárias...</p></div>`;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-6',max_tokens:1000,
+      tools:[{type:'web_search_20250305',name:'web_search'}],
+      system:`Você é assistente especializado em direito tributário brasileiro. Responda SOMENTE com JSON válido sem markdown.\nFormato: {"gerais":[{"titulo":"","resumo":""},{"titulo":"","resumo":""},{"titulo":"","resumo":""}],"tributario":[{"titulo":"","resumo":"","impacto":""},{"titulo":"","resumo":"","impacto":""},{"titulo":"","resumo":"","impacto":""}]}\n"gerais": 3 notícias principais do Brasil hoje. "tributario": 3 atualizações tributárias recentes (Reforma Tributária IBS CBS CARF STF legislação). Factual e conciso.`,
+      messages:[{role:'user',content:`Data: ${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}. Retorne notícias do dia e atualizações tributárias brasileiras.`}]
+    })});
+    const data=await res.json();
+    let txt=''; for(const b of(data.content||[])){if(b.type==='text'&&b.text){txt=b.text;break;}}
+    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    localStorage.setItem(BRIEFING_KEY,JSON.stringify({...parsed,date:todayStr()}));
+    renderBriefing(parsed);
+  } catch(e) {
+    document.getElementById('briefing-content').innerHTML=`<div style="text-align:center;padding:40px;color:#718096"><p style="font-size:13px">Não foi possível carregar. Verifique a conexão.</p><button onclick="fetchBriefing(true)" style="margin-top:12px;background:#0D1117;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Tentar novamente</button></div>`;
+  }
+}
+
+function renderBriefing(data) {
+  let html='';
+  if(data.gerais?.length){
+    html+=`<div style="font-size:11px;font-weight:800;color:#718096;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">📰 Principais notícias</div>`;
+    data.gerais.forEach(n=>{ html+=`<div class="news-item"><div class="news-title-h">${esc(n.titulo)}</div><div class="news-sum">${esc(n.resumo)}</div></div>`; });
+    html+='<div style="margin-bottom:20px"></div>';
+  }
+  if(data.tributario?.length){
+    html+=`<div style="font-size:11px;font-weight:800;color:#2B6CB0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">⚖️ Atualizações tributárias</div>`;
+    data.tributario.forEach(n=>{ html+=`<div class="news-item tax"><div class="news-title-h">${esc(n.titulo)}</div><div class="news-sum">${esc(n.resumo)}</div>${n.impacto?`<div class="news-impact">💡 ${esc(n.impacto)}</div>`:''}</div>`; });
+  }
+  html+=`<div style="text-align:right;margin-top:16px"><button onclick="fetchBriefing(true)" style="background:none;border:1.5px solid #E2E8F0;border-radius:6px;padding:5px 12px;font-size:11px;color:#718096;cursor:pointer;font-weight:600;font-family:inherit">↻ Atualizar</button></div>`;
+  document.getElementById('briefing-content').innerHTML=html;
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function showPage(page) {
+  currentPage=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-btn')[['tarefas','oportunidades','briefing'].indexOf(page)].classList.add('active');
+  if(page==='briefing') fetchBriefing();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+reloadAll();
+</script>
+</body>
+</html>
